@@ -210,8 +210,8 @@ class myGame(arcade.Window):
 
         if gameOver:
             print("{} {}".format("Final score = ", self.score))
-            time.sleep(100)
             exit()
+            close_window()
 
     #If a button is pressed
     def on_key_press(self, key, modifiers):
