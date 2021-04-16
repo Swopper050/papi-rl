@@ -15,7 +15,6 @@ endef
 help:
 	@echo
 	$(call echotask,"deps","installs and updates all dependencies for developing")
-	$(call echotask,"doc","builds documentation using pydoc")
 	$(call echotask,"format","formats code using isort and black")
 	$(call echotask,"formatcheck","checks format using isort and black")
 	$(call echotask,"flake8","lints code using flake8")
