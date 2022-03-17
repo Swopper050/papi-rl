@@ -59,6 +59,7 @@ class PapiEnv(gym.Env):
         self.enemies = pygame.sprite.Group()
 
         self.total_score = 0
+        self.timestep = 0
         return None
 
     def step(self, action):
@@ -69,19 +70,18 @@ class PapiEnv(gym.Env):
         :returns: the new observation, the reward, whether the episode is done and an
                   info dictionary which will be empty
         """
+        self.timestep += 1
         if self.render_game or self.manual:
             self.clock.tick(40)
 
-        ticks = pygame.time.get_ticks()
-
         monsters_to_add = []
-        if ticks > 1000 and random.uniform(0, 1) < 0.005:
+        if self.timestep > 100 and random.uniform(0, 1) < 0.005:
             monsters_to_add.append(MonsterType.onion.value)
-        if ticks > 30000 and random.uniform(0, 1) < 0.005:
+        if self.timestep > 1250 and random.uniform(0, 1) < 0.005:
             monsters_to_add.append(MonsterType.watermelon.value)
-        if ticks > 50000 and random.uniform(0, 1) < 0.005:
+        if self.timestep > 2500 and random.uniform(0, 1) < 0.005:
             monsters_to_add.append(MonsterType.carrot.value)
-        if ticks > 100000 and random.uniform(0, 1) < 0.005:
+        if self.timestep > 5000 and random.uniform(0, 1) < 0.005:
             monsters_to_add.append(MonsterType.tomato.value)
 
         for monster_type in monsters_to_add:
