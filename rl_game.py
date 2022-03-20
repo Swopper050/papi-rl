@@ -5,7 +5,7 @@ from papi_rl import PapiEnv
 
 
 def main(args):
-    env = PapiEnv(render_game=False)
+    env = PapiEnv(normal_speed=False)
 
     obs = env.reset()
     env.render()
@@ -14,6 +14,7 @@ def main(args):
     while not done:
         action = random.randint(0, 3)
         obs, reward, done, _ = env.step(action)
+        __import__("pdb").set_trace()
         env.render()
 
 

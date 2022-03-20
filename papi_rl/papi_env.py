@@ -2,6 +2,7 @@ import random
 from enum import IntEnum
 
 import gym
+import numpy as np
 import pygame
 from pygame.locals import (
     K_DOWN,
@@ -18,6 +19,8 @@ SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 800
 INITIAL_JUMP_VELOCITY = 20
 
+N_FRAMES_PER_OBS = 4
+
 
 class PapiAction(IntEnum):
     nothing = 0
@@ -27,22 +30,20 @@ class PapiAction(IntEnum):
 
 
 class PapiEnv(gym.Env):
-    def __init__(self, manual=False, render_game=False):
+    def __init__(self, normal_speed=False):
         """
-        :param manual: bool, whether to manually control the environment
-        :param render: bool, whether to render the environemnt or not
+        :param normal_speed: bool, whether to render the environment at 40 fps
         """
+        self.normal_speed = normal_speed
 
-        self.observation_space = None
+        self.observation_space = gym.spaces.Box(
+            low=0.0, high=255.0, shape=(N_FRAMES_PER_OBS, SCREEN_HEIGHT, SCREEN_WIDTH)
+        )
         self.action_space = gym.spaces.Discrete(4)
 
-        self.manual = manual
-        self.render_game = render_game
-        if self.render_game or self.manual:
-            pygame.init()
-            self.screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
-            self.clock = pygame.time.Clock()
-            self.score_font = pygame.font.SysFont("monospace", 16)
+        pygame.init()
+        self.screen = pygame.display.set_mode([SCREEN_WIDTH, SCREEN_HEIGHT])
+        self.score_font = pygame.font.SysFont("monospace", 16)
 
         self.reset()
 
@@ -60,7 +61,8 @@ class PapiEnv(gym.Env):
 
         self.total_score = 0
         self.timestep = 0
-        return None
+        self.stacked_obs = np.zeros((N_FRAMES_PER_OBS, SCREEN_HEIGHT, SCREEN_WIDTH))
+        return self.get_observation()
 
     def step(self, action):
         """
@@ -71,7 +73,7 @@ class PapiEnv(gym.Env):
                   info dictionary which will be empty
         """
         self.timestep += 1
-        if self.render_game or self.manual:
+        if self.normal_speed:
             self.clock.tick(40)
 
         monsters_to_add = []
@@ -93,6 +95,7 @@ class PapiEnv(gym.Env):
         self.enemies.update()
 
         done = False
+        reward = 0
         collisions = pygame.sprite.spritecollide(self.player, self.enemies, False)
         if len(collisions) > 0:
             for monster_hitted in collisions:
@@ -100,32 +103,52 @@ class PapiEnv(gym.Env):
                 if self.player.moving_down and dy < 30:
                     self.player.start_jump()
 
-                    self.total_score += self.player.combo * monster_hitted.points
+                    reward += self.player.combo * monster_hitted.points
                     self.player.combo += 1
                     monster_hitted.kill()
                 elif dy > 40:
                     self.player.kill()
                     done = True
 
-        return None, None, done, {}
+        self.total_score += reward
 
-    def render(self):
-        """
-        Renders the game. Quite expensive, so should not be used during training.
-        """
+        self.update_screen()
+        return self.get_observation(), reward, done, {}
+
+    def update_screen(self):
+        """ Redraws the game screen with all entities and score. """
         self.screen.fill((0, 0, 0))
+
         for entity in self.all_sprites:
             self.screen.blit(entity.surf, entity.rect)
 
         scoretext = self.score_font.render(
             "Score: {}".format(self.total_score), 1, (255, 255, 255)
         )
+        self.screen.blit(scoretext, (5, 10))
+
         combotext = self.score_font.render(
             "Combo: {}".format(self.player.combo - 1), 1, (255, 255, 255)
         )
-        self.screen.blit(scoretext, (5, 10))
         self.screen.blit(combotext, (5, 30))
+
+    def render(self):
+        """
+        Renders the game. Quite expensive, so should not be used during training.
+        """
         pygame.display.update()
+
+    def get_observation(self):
+        """
+        :returns: 3d np.ndarray with the current obervation
+        """
+        current_obs = pygame.surfarray.array2d(self.screen).reshape(
+            (1, SCREEN_HEIGHT, SCREEN_WIDTH)
+        )
+        self.stacked_obs = np.concatenate(
+            (self.stacked_obs[1:, :, :], current_obs), axis=0
+        )
+        return self.stacked_obs
 
 
 class PapiPlayer(pygame.sprite.Sprite):

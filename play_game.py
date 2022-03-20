@@ -26,7 +26,7 @@ def get_action(prev_action, is_jumping):
 
 
 def main(args):
-    env = PapiEnv(manual=True)
+    env = PapiEnv(normal_speed=True)
 
     obs = env.reset()
     env.render()
