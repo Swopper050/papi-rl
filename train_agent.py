@@ -4,7 +4,7 @@ from papi_rl import train_agent
 
 
 def main(args):
-    train_agent(n_workers=1, n_epochs=1000)
+    train_agent(n_workers=1, n_epochs=100000)
 
 
 if __name__ == "__main__":

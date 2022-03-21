@@ -1,20 +1,23 @@
 import argparse
-import random
 
-from papi_rl import PapiEnv
+import torch
+
+from papi_rl import PapiAgent, PapiEnv
 
 
 def main(args):
-    env = PapiEnv(normal_speed=False)
+    agent = PapiAgent()
+    agent.load_state_dict(torch.load("papi_agent.pt"))
 
+    env = PapiEnv(normal_speed=False)
     obs = env.reset()
     env.render()
 
     done = False
     while not done:
-        action = random.randint(0, 3)
-        obs, reward, done, _ = env.step(action)
-        __import__("pdb").set_trace()
+        with torch.no_grad():
+            action_probs, _ = agent(torch.from_numpy(obs).float())
+        obs, reward, done, _ = env.step(torch.argmax(action_probs).cpu().item())
         env.render()
 
 

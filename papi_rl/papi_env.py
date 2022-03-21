@@ -108,12 +108,13 @@ class PapiEnv(gym.Env):
                     monster_hitted.kill()
                 elif dy > 40:
                     self.player.kill()
+                    reward -= 10000
                     done = True
 
         self.total_score += reward
 
         self.update_screen()
-        return self.get_observation(), reward, done, {}
+        return self.get_observation(), reward / 100, done, {}
 
     def update_screen(self):
         """ Redraws the game screen with all entities and score. """
